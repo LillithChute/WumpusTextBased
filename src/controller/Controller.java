@@ -6,7 +6,6 @@ import java.io.IOException;
 import java.util.Objects;
 import java.util.Scanner;
 
-
 public class Controller implements IController {
   private final Readable in;
   private final Appendable out;
@@ -14,7 +13,7 @@ public class Controller implements IController {
   /**
    * Constructor for the ControllerImpl class.
    *
-   * @param in  The input stream.
+   * @param in The input stream.
    * @param out The output stream.
    */
   public Controller(Readable in, Appendable out) {
@@ -36,7 +35,7 @@ public class Controller implements IController {
             direction = scan.next();
             System.out.println("No. of caves? ");
             distance = scan.nextInt();
-            game.shoot(direction, distance);
+            game.fireArrow(direction, distance);
             this.out.append(game.getShotResult());
             break;
           case "Move":

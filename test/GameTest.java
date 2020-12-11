@@ -5,362 +5,320 @@ import interfaces.IDungeon;
 import model.Game;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertTrue;
 
 public class GameTest {
-  private IDungeon game1;
-  private IDungeon game2;
-  private IDungeon game3;
-  private IDungeon game4;
-  private IDungeon game5;
+  private IDungeon dungeonCrawlOne;
+  private IDungeon dungeonCrawlTwo;
+  private IDungeon dungeonCrawlThree;
+  private IDungeon dungeonCrawlFour;
 
-  /**
-   * Create objects for the following tests.
-   */
+  /** Create objects for the following tests. */
   @Before
   public void setup() {
-    game1 = new Game(3, 4, 6, true, false,
+    dungeonCrawlOne = new Game(3, 4, 6, true, false,
             0.2, 0.3, 3, 1);
-    game2 = new Game(3, 4, 13, true, true,
+    dungeonCrawlTwo = new Game(3, 4, 13, true, true,
             0.2, 0.2, 3, 1);
-    game3 = new Game(3, 4, 3, false, false,
+    dungeonCrawlThree = new Game(3, 4, 3, false, false,
             0.2, 0.3, 3, 1);
-    game4 = new Game(3, 4, 6, false, true,
+    dungeonCrawlFour = new Game(3, 4, 6, false, true,
             0.2, 0.2, 3, 1);
-    game5 = new Game(3, 4, 5, false, false,
-            0.1, 0.1, 3, 2);
   }
 
   @Test
-  public void testMazeConstructorValid() {
-    assertEquals("The maze is 3 * 4, and it is a non-wrapping perfect maze. " +
-                    "The start point of player is (2, 1). The saved walls are numbered by: " +
-                    "9 2 11 13 15 16 ",
-            game1.toString());
-    assertEquals("The maze is 3 * 4, and it is a wrapping perfect maze. The start point " +
-                    "of player is (2, 0). The saved walls are numbered by: 0 19 2 3 4 5 11 13 16 " +
-                    "17 18 21 23 ",
-            game2.toString());
-    assertEquals("The maze is 3 * 4, and it is a non-wrapping room maze. The start " +
-                    "point of player is (2, 2). The saved walls are numbered by: 11 13 16 ",
-            game3.toString());
-    assertEquals("The maze is 3 * 4, and it is a wrapping room maze. The start point " +
-                    "of player is (0, 2). The saved walls are numbered by: 19 2 11 13 21 23 ",
-            game4.toString());
+  public void testMazeConstructorIsValid() {
+    assertEquals(
+        "The dungeon is 3 * 4, and it is a non-wrapping perfect dungeon. The start "
+            + "point of player is (2, 1). The saved walls are numbered by: 9 2 11 13 15 16 ",
+        dungeonCrawlOne.toString());
+    assertEquals(
+        "The dungeon is 3 * 4, and it is a wrapping perfect dungeon. The start point of "
+            + "player is (2, 0). The saved walls are numbered by: 0 19 2 3 4 5 11 13 16 17 "
+            + "18 21 23 ",
+        dungeonCrawlTwo.toString());
+    assertEquals(
+        "The dungeon is 3 * 4, and it is a non-wrapping room dungeon. The start point of "
+            + "player is (2, 2). The saved walls are numbered by: 11 13 16 ",
+        dungeonCrawlThree.toString());
+    assertEquals(
+        "The dungeon is 3 * 4, and it is a wrapping room dungeon. The start point of "
+            + "player is (0, 2). The saved walls are numbered by: 19 2 11 13 21 23 ",
+        dungeonCrawlFour.toString());
   }
 
   @Test(expected = IllegalArgumentException.class)
-  public void testMazeConstructorInvalid1() {
-    game1 = new Game(-3, 4, 11, true, false,
+  public void testMazeConstructorIsInvalid1() {
+    dungeonCrawlOne = new Game(-3, 4, 11, true, false,
             0.2, 0.2, 3, 1);
   }
 
   @Test(expected = IllegalArgumentException.class)
   public void testMazeConstructorInvalid2() {
-    game1 = new Game(3, -4, 11, true, false,
+    dungeonCrawlOne = new Game(3, -4, 11, true, false,
             0.2, 0.2, 3, 1);
   }
 
   @Test(expected = IllegalArgumentException.class)
   public void testMazeConstructorInvalid3() {
-    game3 = new Game(3, 4, -3, false, false,
-            0.2, 0.2, 3, 1);
+    dungeonCrawlThree = new Game(3, 4, -3, false, false, 0.2,
+            0.2, 3, 1);
   }
 
   @Test(expected = IllegalArgumentException.class)
   public void testMazeConstructorInvalid4() {
-    game3 = new Game(3, 4, 7, false, false,
-            0.2, 0.2, 3, 1);
+    dungeonCrawlThree = new Game(3, 4, 7, false, false, 0.2,
+            0.2, 3, 1);
   }
 
   @Test(expected = IllegalArgumentException.class)
   public void testMazeConstructorInvalid5() {
-    game3 = new Game(3, 4, 4, false, false,
-            -0.2, 0.2, 3, 1);
-    game3 = new Game(3, 4, 4, false, false,
-            0.2, -0.2, 3, 1);
-    game3 = new Game(3, 4, 4, false, false,
-            0.2, 0.2, -3, 1);
-  }
-
-  @Test(expected = IllegalArgumentException.class)
-  public void testGoDownInvalid() {
-    game1.move("down");
-    game1.move("down");
-    game1.move("down");
-  }
-
-  @Test(expected = IllegalArgumentException.class)
-  public void testMoveEmptyString() {
-    game1.move("");
-    game4.move("");
-  }
-
-  @Test(expected = IllegalArgumentException.class)
-  public void testMoveInvalidString() {
-    game1.move("North");
-    game4.move("abc");
+    dungeonCrawlThree = new Game(3, 4, 4, false, false, -0.2,
+            0.2, 3, 1);
+    dungeonCrawlThree = new Game(3, 4, 4, false, false, 0.2,
+            -0.2, 3, 1);
+    dungeonCrawlThree = new Game(3, 4, 4, false, false, 0.2,
+            0.2, -3, 1);
   }
 
   @Test(expected = IllegalArgumentException.class)
   public void testEmptyShoot() {
-    game1.shoot("", 1);
-    game4.shoot("", 1);
+    dungeonCrawlOne.fireArrow("", 1);
+    dungeonCrawlFour.fireArrow("", 1);
   }
 
   @Test(expected = IllegalArgumentException.class)
   public void testInvalidShoot() {
-    game1.shoot("North", 1);
-    game4.shoot("abc", 1);
+    dungeonCrawlOne.fireArrow("North", 1);
+    dungeonCrawlFour.fireArrow("abc", 1);
   }
 
   @Test(expected = IllegalArgumentException.class)
   public void testShootZero() {
-    game1.shoot("S", 0);
-    game4.shoot("N", 0);
+    dungeonCrawlOne.fireArrow("S", 0);
+    dungeonCrawlFour.fireArrow("N", 0);
   }
 
   @Test
   public void testMoveNorthAndSouth() {
-    game1.move("N");
-    assertEquals("You are in cave (1, 1). Tunnels lead to the E, W, N, S",
-            game1.getAdventurerLocation());
-    game1.move("S");
-    assertEquals("You are in cave (2, 1). Tunnels lead to the E, W, N",
-            game1.getAdventurerLocation());
+    dungeonCrawlOne.move("N");
+    assertEquals(
+        "You are in cave (1, 1). Tunnels lead to the E, W, N, S",
+            dungeonCrawlOne.getAdventurerLocation());
+    dungeonCrawlOne.move("S");
+    assertEquals(
+        "You are in cave (2, 1). Tunnels lead to the E, W, N",
+            dungeonCrawlOne.getAdventurerLocation());
   }
 
   @Test
   public void testMoveEastAndWest() {
-    game1.move("E");
+    dungeonCrawlOne.move("E");
     assertEquals("You are in cave (2, 3). Tunnels lead to the W",
-            game1.getAdventurerLocation());
-    game1.move("W");
-    assertEquals("You are in cave (2, 1). Tunnels lead to the E, W, N",
-            game1.getAdventurerLocation());
-    game4.move("E");
-    assertEquals("You are in cave (0, 3). Tunnels lead to the E, W, N",
-            game4.getAdventurerLocation());
-    game4.move("W");
-    assertEquals("You are in cave (0, 2). Tunnels lead to the E, N, S",
-            game4.getAdventurerLocation());
+            dungeonCrawlOne.getAdventurerLocation());
+    dungeonCrawlOne.move("W");
+    assertEquals(
+        "You are in cave (2, 1). Tunnels lead to the E, W, N",
+            dungeonCrawlOne.getAdventurerLocation());
+    dungeonCrawlFour.move("E");
+    assertEquals(
+        "You are in cave (0, 3). Tunnels lead to the E, W, N",
+            dungeonCrawlFour.getAdventurerLocation());
+    dungeonCrawlFour.move("W");
+    assertEquals(
+        "You are in cave (0, 2). Tunnels lead to the E, N, S",
+            dungeonCrawlFour.getAdventurerLocation());
   }
 
   @Test
   public void testMoveToWall() {
-    game1.move("N");
-    game1.move("W");
-    String beforeMoveToWall = game1.getAdventurerLocation();
-    game1.move("S");
-    String afterMoveToWall = game1.getAdventurerLocation();
+    dungeonCrawlOne.move("N");
+    dungeonCrawlOne.move("W");
+    String beforeMoveToWall = dungeonCrawlOne.getAdventurerLocation();
+    dungeonCrawlOne.move("S");
+    String afterMoveToWall = dungeonCrawlOne.getAdventurerLocation();
     assertEquals(beforeMoveToWall, afterMoveToWall);
 
-    String beforeMoveToWall4 = game4.getAdventurerLocation();
-    game4.move("W");
-    String afterMoveToWall4 = game4.getAdventurerLocation();
+    String beforeMoveToWall4 = dungeonCrawlFour.getAdventurerLocation();
+    dungeonCrawlFour.move("W");
+    String afterMoveToWall4 = dungeonCrawlFour.getAdventurerLocation();
     assertEquals(beforeMoveToWall4, afterMoveToWall4);
   }
 
   @Test
   public void testMoveTunnel() {
-    game1.move("N");
-    game1.move("E");
+    dungeonCrawlOne.move("N");
+    dungeonCrawlOne.move("E");
     assertEquals("You are in cave (0, 3). Tunnels lead to the S",
-            game1.getAdventurerLocation());
-    game4.move("E");
-    game4.move("E");
-    game4.move("E");
-    assertEquals("You are in cave (1, 1). Tunnels lead to the E, W, N",
-            game4.getAdventurerLocation());
+            dungeonCrawlOne.getAdventurerLocation());
+    dungeonCrawlFour.move("E");
+    dungeonCrawlFour.move("E");
+    dungeonCrawlFour.move("E");
+    assertEquals(
+        "You are in cave (1, 1). Tunnels lead to the E, W, N",
+            dungeonCrawlFour.getAdventurerLocation());
   }
 
   @Test
   public void testMoveTunnel2() {
-    game1.move("E");
+    dungeonCrawlOne.move("E");
     assertEquals("You are in cave (2, 3). Tunnels lead to the W",
-            game1.getAdventurerLocation());
-    game4.move("E");
-    game4.move("N");
-    assertEquals("You are in cave (2, 0). Tunnels lead to the E, W, N, S",
-            game4.getAdventurerLocation());
+            dungeonCrawlOne.getAdventurerLocation());
+    dungeonCrawlFour.move("E");
+    dungeonCrawlFour.move("N");
+    assertEquals(
+        "You are in cave (2, 0). Tunnels lead to the E, W, N, S",
+            dungeonCrawlFour.getAdventurerLocation());
   }
 
   @Test(expected = IllegalArgumentException.class)
   public void testShootDistanceZero() {
-    game1.shoot("N", 0);
-    game2.shoot("W", 0);
-    game3.shoot("N", 0);
-    game4.shoot("E", 0);
-    assertEquals(false, game4.checkShotSuccess());
+    dungeonCrawlOne.fireArrow("N", 0);
+    dungeonCrawlTwo.fireArrow("W", 0);
+    dungeonCrawlThree.fireArrow("N", 0);
+    dungeonCrawlFour.fireArrow("E", 0);
+    assertFalse(dungeonCrawlFour.checkShotSuccess());
   }
 
   @Test
   public void testShootDistanceWrong() {
-    game4.shoot("N", 3);
-    assertEquals(false, game4.checkShotSuccess());
-    game4.setAdventurerLocation(0, 0);
-    game4.shoot("S", 1);
-    assertEquals(false, game4.checkShotSuccess());
-    game4.setAdventurerLocation(0, 0);
-    game4.shoot("S", 3);
-    assertEquals(false, game4.checkShotSuccess());
+    dungeonCrawlFour.fireArrow("N", 3);
+    assertFalse(dungeonCrawlFour.checkShotSuccess());
+    dungeonCrawlFour.setAdventurerLocation(0, 0);
+    dungeonCrawlFour.fireArrow("S", 1);
+    assertFalse(dungeonCrawlFour.checkShotSuccess());
+    dungeonCrawlFour.setAdventurerLocation(0, 0);
+    dungeonCrawlFour.fireArrow("S", 3);
+    assertFalse(dungeonCrawlFour.checkShotSuccess());
   }
 
   @Test
   public void testShootDistanceOverWumpus() {
-    game1.move("N");
-    game1.shoot("E", 3);
-    assertEquals(false, game1.checkShotSuccess());
-    game1.shoot("E", 1);
-    assertEquals(true, game1.checkShotSuccess());
+    dungeonCrawlOne.move("N");
+    dungeonCrawlOne.fireArrow("E", 3);
+    assertFalse(dungeonCrawlOne.checkShotSuccess());
+    dungeonCrawlOne.fireArrow("E", 1);
+    assertTrue(dungeonCrawlOne.checkShotSuccess());
   }
 
   @Test
   public void testShootThroughTunnel() {
-    game1.move("N");
-    game1.shoot("E", 2);
-    assertEquals(false, game1.checkShotSuccess());
-    game1.shoot("E", 1);
-    assertEquals(true, game1.checkShotSuccess());
+    dungeonCrawlOne.move("N");
+    dungeonCrawlOne.fireArrow("E", 2);
+    assertFalse(dungeonCrawlOne.checkShotSuccess());
+    dungeonCrawlOne.fireArrow("E", 1);
+    assertTrue(dungeonCrawlOne.checkShotSuccess());
   }
 
   @Test
   public void testShootToWall() {
-    game4.shoot("W", 1);
-    assertEquals(false, game4.checkShotSuccess());
-    game1.shoot("E", 2);
-    assertEquals(false, game4.checkShotSuccess());
+    dungeonCrawlFour.fireArrow("W", 1);
+    assertFalse(dungeonCrawlFour.checkShotSuccess());
+    dungeonCrawlOne.fireArrow("E", 2);
+    assertFalse(dungeonCrawlFour.checkShotSuccess());
   }
 
   @Test
   public void testOutOfArrows() {
-    game1.shoot("N", 1);
-    assertEquals(false, game1.checkShotSuccess());
-    game1.shoot("N", 2);
-    assertEquals(false, game1.checkShotSuccess());
-    game1.shoot("W", 1);
-    assertEquals(false, game1.checkShotSuccess());
-    game1.shoot("E", 1);
-    assertEquals(false, game1.checkShotSuccess());
+    dungeonCrawlOne.fireArrow("N", 1);
+    assertFalse(dungeonCrawlOne.checkShotSuccess());
+    dungeonCrawlOne.fireArrow("N", 2);
+    assertFalse(dungeonCrawlOne.checkShotSuccess());
+    dungeonCrawlOne.fireArrow("W", 1);
+    assertFalse(dungeonCrawlOne.checkShotSuccess());
+    dungeonCrawlOne.fireArrow("E", 1);
+    assertFalse(dungeonCrawlOne.checkShotSuccess());
   }
 
   @Test
   public void testShootSuccess() {
-    game4.setAdventurerLocation(0, 0);
-    game4.shoot("S", 2);
-    assertEquals(true, game4.checkShotSuccess());
-    assertEquals(true, game4.getAdventuresEnd());
+    dungeonCrawlFour.setAdventurerLocation(0, 0);
+    dungeonCrawlFour.fireArrow("S", 2);
+    assertTrue(dungeonCrawlFour.checkShotSuccess());
+    assertTrue(dungeonCrawlFour.getAdventuresEnd());
   }
 
   @Test
   public void testPlayerMoveToBat() {
-    game1.setAdventurerStartLocation(0, 2);
-    assertNotEquals(game1.getAdventurerLocation(), "You are in cave (0, 2). " +
-            "Tunnels lead to the W ");
+    dungeonCrawlOne.setAdventurerStartLocation(0, 2);
+    assertNotEquals(
+        dungeonCrawlOne.getAdventurerLocation(), "You are in cave (0, 2). " + "Tunnels lead to the W ");
   }
 
   @Test
   public void testMoveToPit() {
-    game1.move("N");
-    game1.move("N");
-    assertEquals(true, game1.getCurrentRoom().getIsPit());
-    assertEquals(true, game1.getAdventuresEnd());
-    assertEquals(true, game4.getCurrentRoom().getDownCell().getIsPit());
+    dungeonCrawlOne.move("N");
+    dungeonCrawlOne.move("N");
+    assertTrue(dungeonCrawlOne.getCurrentRoom().getIsPit());
+    assertTrue(dungeonCrawlOne.getAdventuresEnd());
+    assertTrue(dungeonCrawlFour.getCurrentRoom().getRoomBelow().getIsPit());
   }
 
   @Test
   public void testMoveCloseToPit() {
-    game1.move("N");
-    assertEquals(true, game1.getCurrentRoom().getCloseToPit());
-    game1.move("S");
-    game1.move("W");
-    assertEquals(false, game1.getCurrentRoom().getCloseToPit());
-    game4.move("N");
-    assertEquals(true, game4.getCurrentRoom().getCloseToPit());
-    game4.move("W");
-    assertEquals(false, game4.getCurrentRoom().getCloseToPit());
+    dungeonCrawlOne.move("N");
+    assertTrue(dungeonCrawlOne.getCurrentRoom().getCloseToPit());
+    dungeonCrawlOne.move("S");
+    dungeonCrawlOne.move("W");
+    assertFalse(dungeonCrawlOne.getCurrentRoom().getCloseToPit());
+    dungeonCrawlFour.move("N");
+    assertTrue(dungeonCrawlFour.getCurrentRoom().getCloseToPit());
+    dungeonCrawlFour.move("W");
+    assertFalse(dungeonCrawlFour.getCurrentRoom().getCloseToPit());
   }
 
   @Test
   public void testMoveCloseToPitByTunnel() {
-    game4.setAdventurerStartLocation(1, 0);
-    assertEquals(true, game4.getCurrentRoom().getCloseToPit());
+    dungeonCrawlFour.setAdventurerStartLocation(1, 0);
+    assertTrue(dungeonCrawlFour.getCurrentRoom().getCloseToPit());
   }
 
   @Test
   public void testMoveCloseToWumpus() {
-    //Smell a wumpus through a two cells tunnel.
-    game1.move("N");
-    assertEquals(true, game1.getCurrentRoom().getCloseToWumpus());
-    game1.move("W");
-    assertEquals(false, game1.getCurrentRoom().getCloseToWumpus());
-    //Smell a wumpus through a one cell tunnel.
-    game4.move("N");
-    assertEquals(true, game4.getCurrentRoom().getCloseToWumpus());
-    game4.move("S");
-    assertEquals(false, game4.getCurrentRoom().getCloseToWumpus());
+    // Smell a wumpus through a two cells tunnel.
+    dungeonCrawlOne.move("N");
+    assertTrue(dungeonCrawlOne.getCurrentRoom().getCloseToWumpus());
+    dungeonCrawlOne.move("W");
+    assertFalse(dungeonCrawlOne.getCurrentRoom().getCloseToWumpus());
+    // Smell a wumpus through a one cell tunnel.
+    dungeonCrawlFour.move("N");
+    assertTrue(dungeonCrawlFour.getCurrentRoom().getCloseToWumpus());
+    dungeonCrawlFour.move("S");
+    assertFalse(dungeonCrawlFour.getCurrentRoom().getCloseToWumpus());
   }
 
   @Test
   public void testEatenByWumpus() {
-    game1.move("N");
-    game1.move("E");
-    assertEquals(true, game1.getAdventuresEnd());
-    game4.move("E");
-    game4.move("E");
-    game4.move("S");
-    game4.move("S");
-    assertEquals(true, game4.getAdventuresEnd());
+    dungeonCrawlOne.move("N");
+    dungeonCrawlOne.move("E");
+    assertTrue(dungeonCrawlOne.getAdventuresEnd());
+    dungeonCrawlFour.move("E");
+    dungeonCrawlFour.move("E");
+    dungeonCrawlFour.move("S");
+    dungeonCrawlFour.move("S");
+    assertTrue(dungeonCrawlFour.getAdventuresEnd());
   }
 
   @Test
   public void testKillWumpusWithTunnel() {
-    game1.move("N");
-    game1.shoot("E", 1);
-    assertEquals(true, game1.checkShotSuccess());
+    dungeonCrawlOne.move("N");
+    dungeonCrawlOne.fireArrow("E", 1);
+    assertTrue(dungeonCrawlOne.checkShotSuccess());
   }
 
   @Test
   public void testKillWumpusWithoutTunnel() {
-    game4.move("N");
-    game4.shoot("W", 1);
-    assertEquals(true, game4.checkShotSuccess());
+    dungeonCrawlFour.move("N");
+    dungeonCrawlFour.fireArrow("W", 1);
+    assertTrue(dungeonCrawlFour.checkShotSuccess());
   }
 
   @Test
   public void testUnWinnable() {
-    game1.setAdventurerStartLocation(0, 0);
-    assertEquals(true, game1.checkUnwinnable());
-    assertEquals(false, game4.checkUnwinnable());
-  }
-
-  @Test
-  public void testMoveTwoPlayer() {
-    game5.move("E");
-    assertEquals(game5.getAdventurerLocation(), "You are in cave (2, 3). Tunnels lead to the W");
-    assertEquals(game5.getMessage(), "You feel a draft.");
-    game5.move("S");
-    assertEquals(game5.getAdventurerLocation(), "You are in cave (2, 3). Tunnels lead to the W");
-    assertEquals(game5.getMessage(), "Player is running out of bound! Please re-input " +
-            "direction.");
-//    game5.changePlayerFlag();
-//    game5.move("N");
-//    assertEquals(game5.getPlayerLocation(), "You are in cave (0, 1). Tunnels lead to the " +
-//            "E, W, S");
-//    game5.move("E");
-//    assertEquals(game5.getPlayerLocation(), "You are in cave (1, 1). " +
-//            "Tunnels lead to the E, W, N, S");
-  }
-
-  @Test
-  public void testShootTwoPlayer() {
-    game5.shoot("N", 1);
-    assertEquals(game5.getMessage(), "You didn't shoot to the wumpus!");
-    assertEquals(game5.getAdventuresEnd(), false);
-//    game5.changePlayerFlag();
-//    game5.shoot("W", 1);
-//    assertEquals(game5.getAlert(), "Hee hee hee, you got the wumpus! Next time you won't " +
-//            "be so lucky!");
-//    assertEquals(game5.getGameEnd(), true);
+    dungeonCrawlOne.setAdventurerStartLocation(0, 0);
+    assertTrue(dungeonCrawlOne.checkUnwinnable());
+    assertFalse(dungeonCrawlFour.checkUnwinnable());
   }
 }

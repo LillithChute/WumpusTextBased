@@ -14,22 +14,22 @@ public class RoomTest {
 
   @Before
   public void setup() {
-    room1 = new Room(0,0);
-    room2 = new Room(1,1);
-    room3 = new Room(2,3);
-    room4 = new Room(4,5);
-    room5 = new Room(4,5);
-    room1.setNextCell(room2, "right");
-    room1.setNextCell(room3, "left");
-    room1.setNextCell(room4, "up");
-    room1.setNextCell(room5, "down");
+    room1 = new Room();
+    room2 = new Room();
+    room3 = new Room();
+    room4 = new Room();
+    room5 = new Room();
+    room1.setNextRoom(room2, "right");
+    room1.setNextRoom(room3, "left");
+    room1.setNextRoom(room4, "up");
+    room1.setNextRoom(room5, "down");
   }
 
   @Test
   public void testSetNextCell() {
-    assertEquals(room1.getRightCell(), room2);
-    assertEquals(room1.getLeftCell(), room3);
-    assertEquals(room1.getUpCell(), room4);
-    assertEquals(room1.getDownCell(), room5);
+    assertEquals(room1.getRoomOnTheRight(), room2);
+    assertEquals(room1.getRoomOnTheLeft(), room3);
+    assertEquals(room1.getRoomAbove(), room4);
+    assertEquals(room1.getRoomBelow(), room5);
   }
 }

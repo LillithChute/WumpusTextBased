@@ -13,13 +13,13 @@ public interface IDungeon {
   /**
    * Shoot towards to direction with a specified distance by the number of caves.
    *
-   * @param direction The direction that player wish to shoot.
+   * @param direction The direction that adventurer wish to shoot.
    * @param distance  The shooting distance by the number of caves.
    */
-  void shoot(String direction, int distance) throws IllegalArgumentException;
+  void fireArrow(String direction, int distance) throws IllegalArgumentException;
 
   /**
-   * The player's move inside the maze.
+   * The adventurer's move inside the dungeon.
    *
    * @param direction Move towards to a specific direction.
    */
@@ -40,29 +40,29 @@ public interface IDungeon {
   boolean checkUnwinnable();
 
   /**
-   * Get if the player successfully shot the wumpus.
+   * Get if the adventurer successfully shot the wumpus.
    *
    * @return True/False.
    */
   boolean checkShotSuccess();
 
   /**
-   * Get the current cell of that the player is located.
+   * Get the current cell of that the adventurer is located.
    *
    * @return The current cell.
    */
   Room getCurrentRoom();
 
   /**
-   * Set the player's location to a specific cell for testing.
+   * Set the adventurer's location to a specific cell for testing.
    *
-   * @param x The player's horizontal location.
-   * @param y The player's vertical location.
+   * @param x The adventurer's horizontal location.
+   * @param y The adventurer's vertical location.
    */
   void setAdventurerLocation(int x, int y);
 
   /**
-   * Reset the player's starting point for testing.
+   * Reset the adventurer's starting point for testing.
    *
    * @param x The horizontal location of the starting point.
    * @param y The vertical location of the starting point. //
@@ -70,23 +70,16 @@ public interface IDungeon {
   void setAdventurerStartLocation(int x, int y);
 
   /**
-   * Get the shot result if the player shot at the wumpus and how many arrows are left.
+   * Get the shot result if the adventurer shot at the wumpus and how many arrows are left.
    *
    * @return The result of shoot is successful or not.
    */
   String getShotResult();
 
   /**
-   * Return the message.
+   * Get the adventurer indicator of the current round.
    *
-   * @return The message of the dungeon.
-   */
-  String getMessage();
-
-  /**
-   * Get the player indicator of the current round.
-   *
-   * @return The player indicator.
+   * @return The adventurer indicator.
    */
   int getAdventurerRound();
 }

@@ -1,9 +1,8 @@
+import controller.Controller;
+import interfaces.IDungeon;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.Scanner;
-
-import controller.Controller;
-import interfaces.IDungeon;
 import model.Game;
 
 public class Main {
@@ -29,25 +28,40 @@ public class Main {
    */
   public static IDungeon createMaze() {
     Scanner scan = new Scanner(System.in);
-    System.out.println("Input the rows number of the maze: ");
+    System.out.println("Input the number of rows: ");
     int rows = scan.nextInt();
-    System.out.println("Input the columns number of the maze: ");
+    System.out.println("Input the number of columns: ");
     int cols = scan.nextInt();
-    System.out.println("Input the wall number of the maze: ");
-    int remains = scan.nextInt();
-    System.out.println("The maze is Perfect(true/false)?");
+
+    // possible number of walls
+    int upperBound = (rows - 1) * cols + (cols - 1) * rows - rows * cols + 1;
+    System.out.println("Input the number of walls (0 - " + upperBound + "): ");
+    int remainingWalls = scan.nextInt();
+
+    if (remainingWalls > rows * (cols - 1) + (rows - 1) * cols - rows * cols + 1) {
+      throw new IllegalArgumentException("Wrong number of remaining walls.");
+    }
+
+    System.out.println("Is the dungeon perfect(true/false)?");
     boolean isPerfect = scan.nextBoolean();
-    System.out.println("The maze is Wrappping(true/false)?");
+    System.out.println("Is the dungeon wrapping(true/false)?");
     boolean isWrapping = scan.nextBoolean();
-    System.out.println("Input the percentage of bats: ");
+    System.out.println("Input the percentage of bats (A number between 0 and 1): ");
     double batPercent = Double.parseDouble(scan.next());
-    System.out.println("Input the percentage of pits: ");
+    System.out.println("Input the percentage of pits (A number between 0 and 1): ");
     double pitPercent = Double.parseDouble(scan.next());
     System.out.println("Input the number of arrows: ");
     int arrows = scan.nextInt();
     IDungeon game =
         new Game(
-            rows, cols, remains, isPerfect, isWrapping, batPercent, pitPercent, arrows, 1);
+            rows, cols, remainingWalls, isPerfect, isWrapping, batPercent, pitPercent, arrows, 1);
+
+    if (game.checkUnwinnable()) {
+      System.out.println("This game cannot be won.");
+    } else {
+      System.out.println("This is a winnable game.");
+    }
+
     return game;
   }
 }

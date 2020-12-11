@@ -16,7 +16,7 @@ public class Game implements IDungeon {
   private int rows;
   private int cols;
   private int remains;
-  private Room[][] maze;
+  private Room[][] rooms;
   private boolean isWrapping;
   private boolean isPerfect;
   private List<int[]> caveLst;
@@ -28,7 +28,6 @@ public class Game implements IDungeon {
   private String alert;
   private int flag;
   private Adventurer adventurer1;
-  private Adventurer adventurer2;
   private Adventurer currAdventurer;
   private List<Room> walkedRooms;
   private int lives;
@@ -39,13 +38,13 @@ public class Game implements IDungeon {
   }
 
   /**
-   * Constructor for Game.Maze class.
+   * Constructor for Game class.
    *
-   * @param rows The number of rows in the maze.
-   * @param cols The number of columns in the maze.
+   * @param rows The number of rows in the dungeon.
+   * @param cols The number of columns in the dungeon.
    * @param remains The number of walls that should remain.
-   * @param isPerfect The maze is perfect or not.
-   * @param isWrapping The maze is wrapping or not.
+   * @param isPerfect The dungeon is perfect or not.
+   * @param isWrapping The dungeon is wrapping or not.
    * @param playerNum The total number of players.
    */
   public Game(
@@ -74,7 +73,6 @@ public class Game implements IDungeon {
     wumpus = null;
     alert = "";
     adventurer1 = new Adventurer();
-    adventurer2 = null;
     walkedRooms = new ArrayList<>();
     lives = playerNum;
 
@@ -98,15 +96,15 @@ public class Game implements IDungeon {
       throw new IllegalArgumentException("The number of arrows is invalid!");
     }
 
-    generatePerfectMaze();
+    generatePerfectDungeon();
 
     if (!isPerfect) {
       if (isWrapping && remains < cols * rows + rows * cols - rows * cols + 1 && remains >= 0) {
-        generateRoomMaze();
+        generateDungeonNonWrapping();
       } else if (!isWrapping
           && remains < (cols - 1) * rows + (rows - 1) * cols - rows * cols + 1
           && remains >= 0) {
-        generateRoomMaze();
+        generateDungeonNonWrapping();
       } else {
         throw new IllegalArgumentException("The walls remaining input is not valid!");
       }
@@ -114,9 +112,9 @@ public class Game implements IDungeon {
 
     assignCaveTunnel();
     linkTunnel();
-    assignWumpus();
-    assignPits();
-    assignSuperBats();
+    setCaveWithWumpus();
+    setCavesWithPits();
+    setCavesWithSuperbats();
     setStartPosition(1);
     currAdventurer = adventurer1;
     adventurer1.setNumberOfArrows(arrows);
@@ -130,35 +128,37 @@ public class Game implements IDungeon {
   private void setStartPosition(int flag) {
     Random random = new Random();
     int randomInt;
+
     if (flag == 1) {
       random.setSeed(1000);
     } else {
       random.setSeed(50);
       random.nextInt(caveLst.size());
     }
+
     randomInt = random.nextInt(caveLst.size());
     int x = caveLst.get(randomInt)[0];
     int y = caveLst.get(randomInt)[1];
-    Room temp = maze[x][y];
+    Room temp = rooms[x][y];
+
     while (temp.getIsWumpus() || temp.getIsPit() || temp.getHasBat()) {
       randomInt = random.nextInt(caveLst.size());
       x = caveLst.get(randomInt)[0];
       y = caveLst.get(randomInt)[1];
-      temp = maze[x][y];
+      temp = rooms[x][y];
     }
+
     if (flag == 1) {
       adventurer1.setAdventurerStartLocation(x, y);
-    } else {
-      adventurer2.setAdventurerStartLocation(x, y);
     }
   }
 
-  /** Generate a Wrapping or a Non-wrapping perfect maze. */
-  private void generatePerfectMaze() {
+  /** Generate a Wrapping or a Non-wrapping perfect dungeon. */
+  private void generatePerfectDungeon() {
     int[][] cellToUnion = new int[rows][cols];
     List<Integer> walls = new ArrayList<>();
     Map<Integer, List<Integer>> unionToCells = new HashMap<>();
-    generateCells(rows, cols);
+    generateLayout(rows, cols);
     int totalWalls;
     if (isWrapping) {
       totalWalls = cols * rows + rows * cols;
@@ -166,13 +166,13 @@ public class Game implements IDungeon {
       totalWalls = (cols - 1) * rows + (rows - 1) * cols;
     }
     // Initialize the cellToUnion and unionToCells
-    setUnionCellRelationship(cellToUnion, unionToCells);
+    setCaveRelationship(cellToUnion, unionToCells);
 
     for (int i = 0; i < totalWalls; i++) {
       walls.add(i);
     }
 
-    int removedCount = kruskalOnWalls(cellToUnion, walls, unionToCells, totalWalls, isWrapping);
+    int removedCount = kruskalWallRemoval(cellToUnion, walls, unionToCells, totalWalls, isWrapping);
     if (removedCount == rows * cols - 1) {
       savedWall.addAll(walls);
     } else {
@@ -188,6 +188,7 @@ public class Game implements IDungeon {
         int cell2X = cellsPositions[1][0];
         int cell2Y = cellsPositions[1][1];
         linkCells(cell1X, cell1Y, cell2X, cell2Y);
+
         setUnionNum(
             unionToCells, cellToUnion, cellToUnion[cell1X][cell1Y], cellToUnion[cell2X][cell2Y]);
       }
@@ -195,12 +196,12 @@ public class Game implements IDungeon {
   }
 
   /**
-   * Assign the union number for each cell as well as the cells included for each union.
+   * Assign the union number for each cave as well as the caves in each union.
    *
-   * @param cellToUnion The union number of the cell.
-   * @param unionToCells The cells in a union.
+   * @param cellToUnion The union number of the cave.
+   * @param unionToCells The caves in a union.
    */
-  private void setUnionCellRelationship(
+  private void setCaveRelationship(
       int[][] cellToUnion, Map<Integer, List<Integer>> unionToCells) {
     for (int i = 0; i < rows; i++) {
       for (int j = 0; j < cols; j++) {
@@ -216,12 +217,12 @@ public class Game implements IDungeon {
    * Use the Kruskal Algorithm to implement the wall removal process.
    *
    * @param cellToUnion The union number of the cell.
-   * @param walls The walls that still remains in the maze.
+   * @param walls The walls that still remains in the dungeon.
    * @param unionToCells The cells in a union.
    * @param totalWalls The initial number of walls at the beginning.
    * @return The number of walls that has been removed.
    */
-  private int kruskalOnWalls(
+  private int kruskalWallRemoval(
       int[][] cellToUnion,
       List<Integer> walls,
       Map<Integer, List<Integer>> unionToCells,
@@ -233,6 +234,7 @@ public class Game implements IDungeon {
     while (removedCount < rows * cols - 1 && savedWall.size() < totalWalls - rows * cols + 1) {
       int randomInt = random.nextInt(walls.size());
       int[][] cellsPositions;
+
       if (isWrapping) {
         cellsPositions = getCellsPositionByWallWrapping(walls.get(randomInt));
       } else {
@@ -242,6 +244,7 @@ public class Game implements IDungeon {
       int cell1Y = cellsPositions[0][1];
       int cell2X = cellsPositions[1][0];
       int cell2Y = cellsPositions[1][1];
+
       if (cellToUnion[cell1X][cell1Y] == cellToUnion[cell2X][cell2Y]) {
         savedWall.add(walls.get(randomInt));
       } else {
@@ -250,8 +253,10 @@ public class Game implements IDungeon {
         setUnionNum(
             unionToCells, cellToUnion, cellToUnion[cell1X][cell1Y], cellToUnion[cell2X][cell2Y]);
       }
+
       walls.remove(randomInt);
     }
+
     return removedCount;
   }
 
@@ -281,36 +286,36 @@ public class Game implements IDungeon {
    * @param cell2Y The vertical index of cell 2.
    */
   private void linkCells(int cell1X, int cell1Y, int cell2X, int cell2Y) {
-    Room room1 = maze[cell1X][cell1Y];
-    Room room2 = maze[cell2X][cell2Y];
+    Room room1 = rooms[cell1X][cell1Y];
+    Room room2 = rooms[cell2X][cell2Y];
     if (cell1X == cell2X) {
-      room1.setNextCell(room2, "right");
-      room2.setNextCell(room1, "left");
+      room1.setNextRoom(room2, "right");
+      room2.setNextRoom(room1, "left");
     } else {
-      room1.setNextCell(room2, "down");
-      room2.setNextCell(room1, "up");
+      room1.setNextRoom(room2, "down");
+      room2.setNextRoom(room1, "up");
     }
   }
 
   /**
-   * Initialize the maze by generating m * n empty cells.
+   * Initialize the dungeon by generating m * n empty cells.
    *
-   * @param rows The number of rows in the maze.
-   * @param cols The number of columns in the maze.
+   * @param rows The number of rows in the dungeon.
+   * @param cols The number of columns in the dungeon.
    */
-  private void generateCells(int rows, int cols) {
-    maze = new Room[rows][cols];
+  private void generateLayout(int rows, int cols) {
+    rooms = new Room[rows][cols];
     Random random = new Random();
     random.setSeed(1000);
     for (int i = 0; i < rows; i++) {
       for (int j = 0; j < cols; j++) {
-        maze[i][j] = new Room(i, j);
+        rooms[i][j] = new Room();
       }
     }
   }
 
   /**
-   * Get the location of the two cells by a input wall index for non wrapping maze.
+   * Get the location of the two cells by a input wall index for non wrapping dungeon.
    *
    * @param wallIndex The wall index.
    * @return The location array of the two cells.
@@ -330,7 +335,7 @@ public class Game implements IDungeon {
   }
 
   /**
-   * Get the two cells positions by the wall.
+   * Get the two cells positions by the wall for wrapping.
    *
    * @param wallIndex The wall index.
    * @return The location array of the two cells.
@@ -339,6 +344,7 @@ public class Game implements IDungeon {
     if (wallIndex < rows * cols) {
       int colIndex = wallIndex % cols;
       int rowIndex = wallIndex / cols;
+
       if (colIndex == 0) {
         return new int[][] {{rowIndex, cols - 1}, {rowIndex, colIndex}};
       } else {
@@ -348,6 +354,7 @@ public class Game implements IDungeon {
       wallIndex -= rows * cols;
       int colIndex = wallIndex % cols;
       int rowIndex = wallIndex / cols;
+
       if (rowIndex == 0) {
         return new int[][] {{rows - 1, colIndex}, {rowIndex, colIndex}};
       } else {
@@ -356,19 +363,21 @@ public class Game implements IDungeon {
     }
   }
 
-  /** Generate a Non-wrapping room maze. */
-  private void generateRoomMaze() {
+  /** Generate a Non-wrapping room dungeon. */
+  private void generateDungeonNonWrapping() {
     int numToDelete = savedWall.size() - remains;
     Random random = new Random();
     random.setSeed(1000);
     for (int i = 0; i < numToDelete; i++) {
       int randomInt = random.nextInt(savedWall.size());
       int[][] cellsPositions;
+
       if (isWrapping) {
         cellsPositions = getCellsPositionByWallWrapping(savedWall.get(randomInt));
       } else {
         cellsPositions = getCellsPositionByWall(savedWall.get(randomInt));
       }
+
       int cell1X = cellsPositions[0][0];
       int cell1Y = cellsPositions[0][1];
       int cell2X = cellsPositions[1][0];
@@ -382,11 +391,12 @@ public class Game implements IDungeon {
   public void goLeft() {
     int playerPosX = currAdventurer.getAdventurerLocation()[0];
     int playerPosY = currAdventurer.getAdventurerLocation()[1];
-    if (playerPosY - 1 >= 0 && maze[playerPosX][playerPosY].getLeftCell() != null) {
+    if (playerPosY - 1 >= 0 && rooms[playerPosX][playerPosY].getRoomOnTheLeft() != null) {
       playerPosY--;
       currAdventurer.setAdventurerLocation(playerPosX, playerPosY);
     } else {
-      if (isWrapping && playerPosY - 1 < 0 && maze[playerPosX][playerPosY].getLeftCell() != null) {
+      if (isWrapping && playerPosY - 1 < 0
+              && rooms[playerPosX][playerPosY].getRoomOnTheLeft() != null) {
         playerPosY = cols - playerPosY - 1;
         currAdventurer.setAdventurerLocation(playerPosX, playerPosY);
       }
@@ -397,13 +407,13 @@ public class Game implements IDungeon {
   public void goRight() {
     int playerPosX = currAdventurer.getAdventurerLocation()[0];
     int playerPosY = currAdventurer.getAdventurerLocation()[1];
-    if (playerPosY + 1 < cols && maze[playerPosX][playerPosY].getRightCell() != null) {
+    if (playerPosY + 1 < cols && rooms[playerPosX][playerPosY].getRoomOnTheRight() != null) {
       playerPosY++;
       currAdventurer.setAdventurerLocation(playerPosX, playerPosY);
     } else {
       if (isWrapping
           && playerPosY + 1 >= cols
-          && maze[playerPosX][playerPosY].getRightCell() != null) {
+          && rooms[playerPosX][playerPosY].getRoomOnTheRight() != null) {
         playerPosY = 0;
         currAdventurer.setAdventurerLocation(playerPosX, playerPosY);
       }
@@ -414,11 +424,12 @@ public class Game implements IDungeon {
   public void goUp() {
     int playerPosX = currAdventurer.getAdventurerLocation()[0];
     int playerPosY = currAdventurer.getAdventurerLocation()[1];
-    if (playerPosX - 1 >= 0 && maze[playerPosX][playerPosY].getUpCell() != null) {
+    if (playerPosX - 1 >= 0 && rooms[playerPosX][playerPosY].getRoomAbove() != null) {
       playerPosX--;
       currAdventurer.setAdventurerLocation(playerPosX, playerPosY);
     } else {
-      if (isWrapping && playerPosX - 1 < 0 && maze[playerPosX][playerPosY].getUpCell() != null) {
+      if (isWrapping && playerPosX - 1 < 0
+              && rooms[playerPosX][playerPosY].getRoomAbove() != null) {
         playerPosX = rows - 1;
         currAdventurer.setAdventurerLocation(playerPosX, playerPosY);
       }
@@ -429,13 +440,13 @@ public class Game implements IDungeon {
   public void goDown() {
     int playerPosX = currAdventurer.getAdventurerLocation()[0];
     int playerPosY = currAdventurer.getAdventurerLocation()[1];
-    if (playerPosX + 1 < rows && maze[playerPosX][playerPosY].getDownCell() != null) {
+    if (playerPosX + 1 < rows && rooms[playerPosX][playerPosY].getRoomBelow() != null) {
       playerPosX++;
       currAdventurer.setAdventurerLocation(playerPosX, playerPosY);
     } else {
       if (isWrapping
           && playerPosX + 1 >= rows
-          && maze[playerPosX][playerPosY].getDownCell() != null) {
+          && rooms[playerPosX][playerPosY].getRoomBelow() != null) {
         playerPosX = 0;
         currAdventurer.setAdventurerLocation(playerPosX, playerPosY);
       }
@@ -449,17 +460,17 @@ public class Game implements IDungeon {
     int playerPosY = currAdventurer.getAdventurerLocation()[1];
     sb.append("You are in cave (").append(playerPosX).append(", ").append(playerPosY).append("). ");
     sb.append("Tunnels lead to the ");
-    Room curr = maze[playerPosX][playerPosY];
-    if (curr.getRightCell() != null) {
+    Room curr = rooms[playerPosX][playerPosY];
+    if (curr.getRoomOnTheRight() != null) {
       sb.append("E, ");
     }
-    if (curr.getLeftCell() != null) {
+    if (curr.getRoomOnTheLeft() != null) {
       sb.append("W, ");
     }
-    if (curr.getUpCell() != null) {
+    if (curr.getRoomAbove() != null) {
       sb.append("N, ");
     }
-    if (curr.getDownCell() != null) {
+    if (curr.getRoomBelow() != null) {
       sb.append("S, ");
     }
     sb.delete(sb.length() - 2, sb.length());
@@ -482,7 +493,7 @@ public class Game implements IDungeon {
     if (isPerfect && isWrapping) {
       s +=
           String.format(
-              "The maze is %d * %d, and it is a wrapping perfect maze. "
+              "The dungeon is %d * %d, and it is a wrapping perfect dungeon. "
                   + "The start point of player is (%d, %d). The saved walls are numbered by: "
                   + convertWallsToString(),
               rows,
@@ -494,7 +505,7 @@ public class Game implements IDungeon {
     if (isPerfect && !isWrapping) {
       s +=
           String.format(
-              "The maze is %d * %d, and it is a non-wrapping perfect maze. "
+              "The dungeon is %d * %d, and it is a non-wrapping perfect dungeon. "
                   + "The start point of player is (%d, %d). The saved walls are numbered by: "
                   + convertWallsToString(),
               rows,
@@ -506,7 +517,7 @@ public class Game implements IDungeon {
     if (!isPerfect && isWrapping) {
       s +=
           String.format(
-              "The maze is %d * %d, and it is a wrapping room maze. "
+              "The dungeon is %d * %d, and it is a wrapping room dungeon. "
                   + "The start point of player is (%d, %d). The saved walls are numbered by: "
                   + convertWallsToString(),
               rows,
@@ -518,7 +529,7 @@ public class Game implements IDungeon {
     if (!isPerfect && !isWrapping) {
       s +=
           String.format(
-              "The maze is %d * %d, and it is a non-wrapping room maze. "
+              "The dungeon is %d * %d, and it is a non-wrapping room dungeon. "
                   + "The start point of player is (%d, %d). The saved walls are numbered by: "
                   + convertWallsToString(),
               rows,
@@ -529,16 +540,17 @@ public class Game implements IDungeon {
     return s;
   }
 
-  /** Traverse the whole maze, and assign each cell as a cave or a tunnel. */
+  /** Traverse the whole dungeon, and assign each cell as a cave or a tunnel. */
   private void assignCaveTunnel() {
     for (int i = 0; i < rows; i++) {
       for (int j = 0; j < cols; j++) {
-        Room curr = maze[i][j];
-        if (getWallNums(curr) == 2) {
-          curr.setIsRoom(false);
+        Room curr = rooms[i][j];
+
+        if (getNumberOfWalls(curr) == 2) {
+          curr.setIsCave(false);
           curr.setIsTunnel(true);
         } else {
-          curr.setIsRoom(true);
+          curr.setIsCave(true);
           curr.setIsTunnel(false);
           int[] temp = new int[2];
           temp[0] = i;
@@ -549,70 +561,71 @@ public class Game implements IDungeon {
     }
   }
 
-  /** Link the two rooms if there is a tunnel or tunnels between them. */
+  /** Link the two caves if there is a tunnel or tunnels between them. */
   private void linkTunnel() {
     for (int i = 0; i < rows; i++) {
       for (int j = 0; j < cols; j++) {
-        Room curr = maze[i][j];
+        Room curr = rooms[i][j];
         if (curr.getIsRoom()) {
-          if (curr.getUpCell() != null && curr.getUpCell().getIsTunnel()) {
-            linkTunnelHelper(curr, curr.getUpCell(), 0);
+          if (curr.getRoomAbove() != null && curr.getRoomAbove().getIsTunnel()) {
+            linkTunnelHelper(curr, curr.getRoomAbove(), 0);
           }
-          if (curr.getDownCell() != null && curr.getDownCell().getIsTunnel()) {
-            linkTunnelHelper(curr, curr.getDownCell(), 1);
+          if (curr.getRoomBelow() != null && curr.getRoomBelow().getIsTunnel()) {
+            linkTunnelHelper(curr, curr.getRoomBelow(), 1);
           }
-          if (curr.getLeftCell() != null && curr.getLeftCell().getIsTunnel()) {
-            linkTunnelHelper(curr, curr.getLeftCell(), 2);
+          if (curr.getRoomOnTheLeft() != null && curr.getRoomOnTheLeft().getIsTunnel()) {
+            linkTunnelHelper(curr, curr.getRoomOnTheLeft(), 2);
           }
-          if (curr.getRightCell() != null && curr.getRightCell().getIsTunnel()) {
-            linkTunnelHelper(curr, curr.getRightCell(), 3);
+          if (curr.getRoomOnTheRight() != null && curr.getRoomOnTheRight().getIsTunnel()) {
+            linkTunnelHelper(curr, curr.getRoomOnTheRight(), 3);
           }
         }
       }
     }
   }
 
-  /** The player runs into the tunnel and update the player's location by the tunnel's exit. */
+  /** Update the adventurer's location after passing through the tunnel. */
   private void linkTunnelHelper(Room curr, Room next, int flag) {
     int originFlag = flag;
+
     while (next.getIsTunnel()) {
-      if (next.getDownCell() != null && flag != 0) {
-        next = curr.getDownCell();
+      if (next.getRoomBelow() != null && flag != 0) {
+        next = next.getRoomBelow();
         flag = 1;
-      } else if (next.getUpCell() != null && flag != 1) {
-        next = next.getUpCell();
+      } else if (next.getRoomAbove() != null && flag != 1) {
+        next = next.getRoomAbove();
         flag = 0;
-      } else if (next.getLeftCell() != null && flag != 3) {
-        next = next.getLeftCell();
+      } else if (next.getRoomOnTheLeft() != null && flag != 3) {
+        next = next.getRoomOnTheLeft();
         flag = 2;
-      } else if (next.getRightCell() != null && flag != 2) {
-        next = next.getRightCell();
+      } else if (next.getRoomOnTheRight() != null && flag != 2) {
+        next = next.getRoomOnTheRight();
         flag = 3;
       } else {
         break;
       }
     }
     if (originFlag == 0) {
-      curr.setNextCell(next, "up");
+      curr.setNextRoom(next, "up");
     }
     if (originFlag == 1) {
-      curr.setNextCell(next, "down");
+      curr.setNextRoom(next, "down");
     }
     if (originFlag == 2) {
-      curr.setNextCell(next, "left");
+      curr.setNextRoom(next, "left");
     }
     if (originFlag == 3) {
-      curr.setNextCell(next, "right");
+      curr.setNextRoom(next, "right");
     }
 
     if (flag == 0) {
-      next.setNextCell(curr, "down");
+      next.setNextRoom(curr, "down");
     } else if (flag == 1) {
-      next.setNextCell(curr, "up");
+      next.setNextRoom(curr, "up");
     } else if (flag == 2) {
-      next.setNextCell(curr, "right");
+      next.setNextRoom(curr, "right");
     } else if (flag == 3) {
-      next.setNextCell(curr, "left");
+      next.setNextRoom(curr, "left");
     }
   }
 
@@ -622,87 +635,102 @@ public class Game implements IDungeon {
    * @param curr The current cell.
    * @return The number of walls that the current cell has.
    */
-  private int getWallNums(Room curr) {
+  private int getNumberOfWalls(Room curr) {
     int count = 0;
-    if (curr.getDownCell() == null) {
+
+    if (curr.getRoomBelow() == null) {
       count++;
     }
-    if (curr.getUpCell() == null) {
+
+    if (curr.getRoomAbove() == null) {
       count++;
     }
-    if (curr.getLeftCell() == null) {
+
+    if (curr.getRoomOnTheLeft() == null) {
       count++;
     }
-    if (curr.getRightCell() == null) {
+
+    if (curr.getRoomOnTheRight() == null) {
       count++;
     }
+
     return count;
   }
 
-  /** Assign a random cave to have the wumpus. There is only one wumpus in the game. */
-  private void assignWumpus() {
+  /** Assign a random cave to have the wumpus. */
+  private void setCaveWithWumpus() {
     Random random = new Random();
     random.setSeed(500);
     int index = random.nextInt(caveLst.size());
     int[] wumpusLocation = caveLst.get(index);
-    wumpus = maze[wumpusLocation[0]][wumpusLocation[1]];
+    wumpus = rooms[wumpusLocation[0]][wumpusLocation[1]];
     wumpus.setIsWumpus();
-    if (wumpus.getRightCell() != null) {
-      wumpus.getRightCell().setCloseToWumpus();
+
+    if (wumpus.getRoomOnTheRight() != null) {
+      wumpus.getRoomOnTheRight().setCloseToWumpus();
     }
-    if (wumpus.getLeftCell() != null) {
-      wumpus.getLeftCell().setCloseToWumpus();
+
+    if (wumpus.getRoomOnTheLeft() != null) {
+      wumpus.getRoomOnTheLeft().setCloseToWumpus();
     }
-    if (wumpus.getUpCell() != null) {
-      wumpus.getUpCell().setCloseToWumpus();
+
+    if (wumpus.getRoomAbove() != null) {
+      wumpus.getRoomAbove().setCloseToWumpus();
     }
-    if (wumpus.getDownCell() != null) {
-      wumpus.getDownCell().setCloseToWumpus();
+
+    if (wumpus.getRoomBelow() != null) {
+      wumpus.getRoomBelow().setCloseToWumpus();
     }
   }
 
   /** Assign some random caves as bottomless pits. */
-  private void assignPits() {
+  private void setCavesWithPits() {
     int caveNum = caveLst.size();
     int pitNum = (int) (caveNum * pitPercent);
     Random random = new Random();
     random.setSeed(300);
+
     for (int i = 0; i < pitNum; i++) {
       int index = random.nextInt(caveLst.size());
       int[] pitPos = caveLst.get(index);
-      Room pit = maze[pitPos[0]][pitPos[1]];
+      Room pit = rooms[pitPos[0]][pitPos[1]];
       pit.setIsPit();
-      if (pit.getRightCell() != null) {
-        pit.getRightCell().setCloseToPit();
+
+      if (pit.getRoomOnTheRight() != null) {
+        pit.getRoomOnTheRight().setCloseToPit();
       }
-      if (pit.getLeftCell() != null) {
-        pit.getLeftCell().setCloseToPit();
+
+      if (pit.getRoomOnTheLeft() != null) {
+        pit.getRoomOnTheLeft().setCloseToPit();
       }
-      if (pit.getUpCell() != null) {
-        pit.getUpCell().setCloseToPit();
+
+      if (pit.getRoomAbove() != null) {
+        pit.getRoomAbove().setCloseToPit();
       }
-      if (pit.getDownCell() != null) {
-        pit.getDownCell().setCloseToPit();
+
+      if (pit.getRoomBelow() != null) {
+        pit.getRoomBelow().setCloseToPit();
       }
     }
   }
 
   /** Assign some random caves to have superbats. */
-  private void assignSuperBats() {
+  private void setCavesWithSuperbats() {
     int caveNum = caveLst.size();
     int batNum = (int) (caveNum * batPercent);
     Random random = new Random();
     random.setSeed(200);
+
     for (int i = 0; i < batNum; i++) {
       int index = random.nextInt(caveLst.size());
       int[] batPos = caveLst.get(index);
-      Room bat = maze[batPos[0]][batPos[1]];
+      Room bat = rooms[batPos[0]][batPos[1]];
       bat.setHasBat();
     }
   }
 
-  /** Get into the cave that have superbats. */
-  private void getInBats() {
+  /** Adventurer is in a room with superbats. */
+  private void superbatCave() {
     Random random = new Random();
     random.setSeed(50);
     int num = random.nextInt(2);
@@ -711,24 +739,24 @@ public class Game implements IDungeon {
     currAdventurer.setAdventurerLocation(playerPosX, playerPosY);
 
     // both bats and pits
-    if (maze[playerPosX][playerPosY].getIsPit()) {
+    if (rooms[playerPosX][playerPosY].getIsPit()) {
       // 50% possibility to pits
       if (num == 0) {
-        getInPits();
+        fallsInPit();
       } else {
         // 50% possibility to drop random cave
-        dropToRandomCave();
+        movedBySuperbats();
       }
     } else {
       if (num == 1) {
-        dropToRandomCave();
+        movedBySuperbats();
       }
     }
   }
 
-  /** The superbats drop the player to a random cave. */
-  private void dropToRandomCave() {
-    alert = "Whoa -- you successfully duck superbats that try to grab you!";
+  /** The superbats drop the adventurer to a random cave. */
+  private void movedBySuperbats() {
+    alert = "You have been caught by a superbat and dropped in a new room!";
     System.out.println(alert);
 
     Random random = new Random();
@@ -737,35 +765,41 @@ public class Game implements IDungeon {
     int playerPosY = caveLst.get(index)[1];
     currAdventurer.setAdventurerLocation(playerPosX, playerPosY);
 
-    if (maze[playerPosX][playerPosY].getIsWumpus()) {
-      getInWumpus();
-    } else if (maze[playerPosX][playerPosY].getHasBat()) {
-      getInBats();
-    } else if (maze[playerPosX][playerPosY].getIsPit()) {
-      getInPits();
+    if (rooms[playerPosX][playerPosY].getIsWumpus()) {
+      eatenByTheWumpus();
+    } else if (rooms[playerPosX][playerPosY].getHasBat()) {
+      superbatCave();
+    } else if (rooms[playerPosX][playerPosY].getIsPit()) {
+      fallsInPit();
     }
   }
 
-  /** The player get into the cave that has wumpus. */
-  private void getInWumpus() {
+  /** The adventurer is eaten by the wumpus. */
+  private void eatenByTheWumpus() {
     lives--;
+
     currAdventurer.setIsAdventurerDead();
+
     if (lives == 0) {
       isGameOver = true;
     }
+
     currAdventurer.setIsAdventurerDead();
     alert = "You are crunchy and taste good with ketchup.  You are dead. "
             + "Thanks for feeding the Wumpus!";
     System.out.println(alert);
   }
 
-  /** The player get into the cave that is a bottomless pit. */
-  private void getInPits() {
+  /** The adventurer falls in a pit. */
+  private void fallsInPit() {
     lives--;
+
     currAdventurer.setIsAdventurerDead();
+
     if (lives == 0) {
       isGameOver = true;
     }
+
     currAdventurer.setIsAdventurerDead();
     alert = "You fell into the bottomless pit and died!";
     System.out.println(alert);
@@ -776,13 +810,14 @@ public class Game implements IDungeon {
     walkedRooms.clear();
     int playerPosX = currAdventurer.getAdventurerLocation()[0];
     int playerPosY = currAdventurer.getAdventurerLocation()[1];
-    Room curr = maze[playerPosX][playerPosY];
+    Room curr = rooms[playerPosX][playerPosY];
     walkedRooms.add(curr);
     int flag = 0;
     boolean getToWall = false;
+
     switch (direction) {
       case "N":
-        if (curr.getUpCell() != null) {
+        if (curr.getRoomAbove() != null) {
           goUp();
         } else {
           getToWall = true;
@@ -791,7 +826,7 @@ public class Game implements IDungeon {
         }
         break;
       case "S":
-        if (curr.getDownCell() != null) {
+        if (curr.getRoomBelow() != null) {
           goDown();
           flag = 1;
         } else {
@@ -801,7 +836,7 @@ public class Game implements IDungeon {
         }
         break;
       case "W":
-        if (curr.getLeftCell() != null) {
+        if (curr.getRoomOnTheLeft() != null) {
           goLeft();
           flag = 2;
         } else {
@@ -811,7 +846,7 @@ public class Game implements IDungeon {
         }
         break;
       case "E":
-        if (curr.getRightCell() != null) {
+        if (curr.getRoomOnTheRight() != null) {
           goRight();
           flag = 3;
         } else {
@@ -828,7 +863,8 @@ public class Game implements IDungeon {
     }
     playerPosX = currAdventurer.getAdventurerLocation()[0];
     playerPosY = currAdventurer.getAdventurerLocation()[1];
-    curr = maze[playerPosX][playerPosY];
+    curr = rooms[playerPosX][playerPosY];
+
     if (!getToWall) {
       movementHelper(curr, flag);
     }
@@ -849,42 +885,38 @@ public class Game implements IDungeon {
       Room curr = queue.poll();
       curr.setReachToWumpus();
       visited.add(curr);
-      if (curr.getUpCell() != null
-          && !visited.contains(curr.getUpCell())
-          && (!curr.getUpCell().getIsPit()
-              || curr.getUpCell().getIsPit() && curr.getUpCell().getHasBat())) {
-        queue.offer(curr.getUpCell());
+      if (curr.getRoomAbove() != null
+          && !visited.contains(curr.getRoomAbove())
+          && (!curr.getRoomAbove().getIsPit()
+              || curr.getRoomAbove().getIsPit() && curr.getRoomAbove().getHasBat())) {
+        queue.offer(curr.getRoomAbove());
       }
-      if (curr.getDownCell() != null
-          && !visited.contains(curr.getDownCell())
-          && (!curr.getDownCell().getIsPit()
-              || curr.getDownCell().getIsPit() && curr.getDownCell().getHasBat())) {
-        queue.offer(curr.getDownCell());
+      if (curr.getRoomBelow() != null
+          && !visited.contains(curr.getRoomBelow())
+          && (!curr.getRoomBelow().getIsPit()
+              || curr.getRoomBelow().getIsPit() && curr.getRoomBelow().getHasBat())) {
+        queue.offer(curr.getRoomBelow());
       }
-      if (curr.getLeftCell() != null
-          && !visited.contains(curr.getLeftCell())
-          && (!curr.getLeftCell().getIsPit()
-              || curr.getLeftCell().getIsPit() && curr.getLeftCell().getHasBat())) {
-        queue.offer(curr.getLeftCell());
+      if (curr.getRoomOnTheLeft() != null
+          && !visited.contains(curr.getRoomOnTheLeft())
+          && (!curr.getRoomOnTheLeft().getIsPit()
+              || curr.getRoomOnTheLeft().getIsPit() && curr.getRoomOnTheLeft().getHasBat())) {
+        queue.offer(curr.getRoomOnTheLeft());
       }
-      if (curr.getRightCell() != null
-          && !visited.contains(curr.getRightCell())
-          && (!curr.getRightCell().getIsPit()
-              || curr.getRightCell().getIsPit() && curr.getRightCell().getHasBat())) {
-        queue.offer(curr.getRightCell());
+      if (curr.getRoomOnTheRight() != null
+          && !visited.contains(curr.getRoomOnTheRight())
+          && (!curr.getRoomOnTheRight().getIsPit()
+              || curr.getRoomOnTheRight().getIsPit() && curr.getRoomOnTheRight().getHasBat())) {
+        queue.offer(curr.getRoomOnTheRight());
       }
     }
 
     for (int i = 0; i < rows; i++) {
       for (int j = 0; j < cols; j++) {
-        if (maze[i][j].getIsRoom()
-                && !maze[i][j].getReachToWumpus()
+        if (rooms[i][j].getIsRoom()
+                && !rooms[i][j].getReachToWumpus()
                 && i == adventurer1.getAdventurerStartLocation()[0]
-                && j == adventurer1.getAdventurerStartLocation()[1]
-            || maze[i][j].getIsRoom()
-                && !maze[i][j].getReachToWumpus()
-                && i == adventurer2.getAdventurerStartLocation()[0]
-                && j == adventurer2.getAdventurerStartLocation()[1]) {
+                && j == adventurer1.getAdventurerStartLocation()[1]) {
           return true;
         }
       }
@@ -900,7 +932,7 @@ public class Game implements IDungeon {
 
   @Override
   public Room getCurrentRoom() {
-    return maze[currAdventurer.getAdventurerLocation()[0]][
+    return rooms[currAdventurer.getAdventurerLocation()[0]][
         currAdventurer.getAdventurerLocation()[1]];
   }
 
@@ -925,7 +957,7 @@ public class Game implements IDungeon {
   }
 
   /**
-   * The helper function for move method in order to print the current cave info.
+   * This method provides output for the user describing and setting values for the cave.
    *
    * @param curr The current cell.
    * @param flag The direction flag.
@@ -939,12 +971,12 @@ public class Game implements IDungeon {
       alert = "You smell something ghastly very near.";
       System.out.println(alert);
     } else if (curr.getIsWumpus()) {
-      getInWumpus();
+      eatenByTheWumpus();
     } else if (curr.getHasBat()) {
-      getInBats();
+      superbatCave();
       getAdventurerLocation();
     } else if (curr.getIsPit()) {
-      getInPits();
+      fallsInPit();
     } else if (curr.getIsTunnel()) {
       moveInTunnel(flag);
     } else {
@@ -955,32 +987,39 @@ public class Game implements IDungeon {
   }
 
   @Override
-  public void shoot(String direction, int distance) throws IllegalArgumentException {
+  public void fireArrow(String direction, int distance) throws IllegalArgumentException {
     int playerPosX = currAdventurer.getAdventurerLocation()[0];
     int playerPosY = currAdventurer.getAdventurerLocation()[1];
+
     if (!direction.equals("N")
         && !direction.equals("S")
         && !direction.equals("W")
         && !direction.equals("E")) {
       throw new IllegalArgumentException("The direction input is invalid!");
     }
+
     if (distance == 0) {
       throw new IllegalArgumentException("shooting distance cannot be zero!");
     }
-    Room curr = maze[playerPosX][playerPosY];
+
+    Room curr = rooms[playerPosX][playerPosY];
+
     if (direction.equals("N")) {
-      curr = goShootByDistance(distance, curr, 0);
+      curr = fireArrowByCaveNumber(distance, curr, 0);
     }
+
     if (direction.equals("S")) {
-      curr = goShootByDistance(distance, curr, 1);
+      curr = fireArrowByCaveNumber(distance, curr, 1);
     }
+
     if (direction.equals("W")) {
-      curr = goShootByDistance(distance, curr, 2);
+      curr = fireArrowByCaveNumber(distance, curr, 2);
     }
 
     if (direction.equals("E")) {
-      curr = goShootByDistance(distance, curr, 3);
+      curr = fireArrowByCaveNumber(distance, curr, 3);
     }
+
     if (curr == null) {
       alert = "You missed the wumpus!";
       System.out.println(alert);
@@ -1008,48 +1047,53 @@ public class Game implements IDungeon {
   }
 
   /**
-   * A helper method for shoot that get the target cell to shoot after assigning a distance and
-   * direction.
+   * Given a distance and direction, fire an arrow.
    *
    * @param distance Number of caves.
-   * @param curr The current cell.
+   * @param currentRoom The current cell.
    * @param flag The direction flag.
    * @return The target cell to shoot.
    */
-  private Room goShootByDistance(int distance, Room curr, int flag) {
+  private Room fireArrowByCaveNumber(int distance, Room currentRoom, int flag) {
     for (int i = 0; i < distance; i++) {
-      Room prev = curr;
+      Room prev = currentRoom;
+
       if (flag == 1) {
-        if (curr.getDownCell() == null) {
+        if (currentRoom.getRoomBelow() == null) {
           currAdventurer.setNumberOfArrows(currAdventurer.getNumberOfArrows() - 1);
           return null;
         }
-        curr = curr.getDownCell();
-        flag = getFlag(prev, curr);
+
+        currentRoom = currentRoom.getRoomBelow();
+        flag = getFlag(prev, currentRoom);
       } else if (flag == 0) {
-        if (curr.getUpCell() == null) {
+        if (currentRoom.getRoomAbove() == null) {
           currAdventurer.setNumberOfArrows(currAdventurer.getNumberOfArrows() - 1);
           return null;
         }
-        curr = curr.getUpCell();
-        flag = getFlag(prev, curr);
+
+        currentRoom = currentRoom.getRoomAbove();
+        flag = getFlag(prev, currentRoom);
       } else if (flag == 2) {
-        if (curr.getLeftCell() == null) {
+        if (currentRoom.getRoomOnTheLeft() == null) {
           currAdventurer.setNumberOfArrows(currAdventurer.getNumberOfArrows() - 1);
           return null;
         }
-        curr = curr.getLeftCell();
-        flag = getFlag(prev, curr);
+
+        currentRoom = currentRoom.getRoomOnTheLeft();
+        flag = getFlag(prev, currentRoom);
       } else if (flag == 3) {
-        if (curr.getRightCell() == null) {
+        if (currentRoom.getRoomOnTheRight() == null) {
           currAdventurer.setNumberOfArrows(currAdventurer.getNumberOfArrows() - 1);
           return null;
         }
-        curr = curr.getRightCell();
-        flag = getFlag(prev, curr);
+
+        currentRoom = currentRoom.getRoomOnTheRight();
+        flag = getFlag(prev, currentRoom);
       }
     }
-    return curr;
+
+    return currentRoom;
   }
 
   /**
@@ -1061,39 +1105,39 @@ public class Game implements IDungeon {
    */
   private int getFlag(Room prev, Room curr) {
     int flag = 0;
-    if (curr.getUpCell() == prev) {
+    if (curr.getRoomAbove() == prev) {
       flag = 1;
     }
-    if (curr.getDownCell() == prev) {
+    if (curr.getRoomBelow() == prev) {
       flag = 0;
     }
-    if (curr.getLeftCell() == prev) {
+    if (curr.getRoomOnTheLeft() == prev) {
       flag = 3;
     }
-    if (curr.getRightCell() == prev) {
+    if (curr.getRoomOnTheRight() == prev) {
       flag = 2;
     }
     return flag;
   }
 
   /**
-   * The player move in tunnel and update the player's location when the player get out of the
-   * tunnel.
+   * The Adventurer move in tunnel and update the Adventurer's location when the Adventurer get
+   * out of the tunnel.
    */
   private void moveInTunnel(int flag) {
     int playerPosX = currAdventurer.getAdventurerLocation()[0];
     int playerPosY = currAdventurer.getAdventurerLocation()[1];
-    while (maze[playerPosX][playerPosY].getIsTunnel()) {
-      if (maze[playerPosX][playerPosY].getDownCell() != null && flag != 0) {
+    while (rooms[playerPosX][playerPosY].getIsTunnel()) {
+      if (rooms[playerPosX][playerPosY].getRoomBelow() != null && flag != 0) {
         goDown();
         flag = 1;
-      } else if (maze[playerPosX][playerPosY].getUpCell() != null && flag != 1) {
+      } else if (rooms[playerPosX][playerPosY].getRoomAbove() != null && flag != 1) {
         goUp();
         flag = 0;
-      } else if (maze[playerPosX][playerPosY].getLeftCell() != null && flag != 3) {
+      } else if (rooms[playerPosX][playerPosY].getRoomOnTheLeft() != null && flag != 3) {
         goLeft();
         flag = 2;
-      } else if (maze[playerPosX][playerPosY].getRightCell() != null && flag != 2) {
+      } else if (rooms[playerPosX][playerPosY].getRoomOnTheRight() != null && flag != 2) {
         goRight();
         flag = 3;
       } else {
@@ -1101,13 +1145,8 @@ public class Game implements IDungeon {
       }
       playerPosX = currAdventurer.getAdventurerLocation()[0];
       playerPosY = currAdventurer.getAdventurerLocation()[1];
-      walkedRooms.add(maze[playerPosX][playerPosY]);
+      walkedRooms.add(rooms[playerPosX][playerPosY]);
     }
-    movementHelper(maze[playerPosX][playerPosY], flag);
-  }
-
-  @Override
-  public String getMessage() {
-    return alert;
+    movementHelper(rooms[playerPosX][playerPosY], flag);
   }
 }
