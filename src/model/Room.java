@@ -152,12 +152,12 @@ public class Room implements IRoom {
   }
 
   @Override
-  public void setReachToWumpus() {
+  public void setCouldReachWumpus() {
     couldHitWumpus = true;
   }
 
   @Override
-  public boolean getReachToWumpus() {
+  public boolean getCouldReachWumpus() {
     return couldHitWumpus;
   }
 }

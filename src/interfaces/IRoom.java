@@ -124,14 +124,14 @@ public interface IRoom {
   boolean getIsTunnel();
 
   /**
-   * Set is the cave could reach to wumpus.
+   * Set if the cave could reach the wumpus.
    */
-  void setReachToWumpus();
+  void setCouldReachWumpus();
 
   /**
-   * Get if the cave could reach to wumpus or not.
+   * Get if the cave could reach the wumpus.
    *
    * @return True/False.
    */
-  boolean getReachToWumpus();
+  boolean getCouldReachWumpus();
 }

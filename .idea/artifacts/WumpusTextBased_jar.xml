@@ -1,0 +1,8 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="WumpusTextBased:jar">
+    <output-path>$PROJECT_DIR$/res</output-path>
+    <root id="archive" name="WumpusTextBased.jar">
+      <element id="module-output" name="WumpusTextBased" />
+    </root>
+  </artifact>
+</component>

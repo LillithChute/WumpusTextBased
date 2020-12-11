@@ -23,13 +23,13 @@ public class Game implements IDungeon {
   private double batPercent;
   private double pitPercent;
   private boolean isGameOver;
-  private boolean isShootSuccess;
+  private boolean isShotSuccess;
   private Room wumpus;
   private String alert;
   private int flag;
   private Adventurer adventurer1;
   private Adventurer currAdventurer;
-  private List<Room> walkedRooms;
+  private List<Room> visitedRooms;
   private int lives;
 
   /** Empty constructor. */
@@ -68,12 +68,12 @@ public class Game implements IDungeon {
     this.batPercent = batPercent;
     this.pitPercent = pitPercent;
     isGameOver = false;
-    isShootSuccess = false;
+    isShotSuccess = false;
     flag = 1;
     wumpus = null;
     alert = "";
     adventurer1 = new Adventurer();
-    walkedRooms = new ArrayList<>();
+    visitedRooms = new ArrayList<>();
     lives = playerNum;
 
     if (rows < 0) {
@@ -179,15 +179,15 @@ public class Game implements IDungeon {
       for (int wall : walls) {
         int[][] cellsPositions;
         if (!isWrapping) {
-          cellsPositions = getCellsPositionByWall(wall);
+          cellsPositions = getCavesPositionByWall(wall);
         } else {
-          cellsPositions = getCellsPositionByWallWrapping(wall);
+          cellsPositions = getCavesPositionByWallWrapping(wall);
         }
         int cell1X = cellsPositions[0][0];
         int cell1Y = cellsPositions[0][1];
         int cell2X = cellsPositions[1][0];
         int cell2Y = cellsPositions[1][1];
-        linkCells(cell1X, cell1Y, cell2X, cell2Y);
+        linkCaves(cell1X, cell1Y, cell2X, cell2Y);
 
         setUnionNum(
             unionToCells, cellToUnion, cellToUnion[cell1X][cell1Y], cellToUnion[cell2X][cell2Y]);
@@ -236,9 +236,9 @@ public class Game implements IDungeon {
       int[][] cellsPositions;
 
       if (isWrapping) {
-        cellsPositions = getCellsPositionByWallWrapping(walls.get(randomInt));
+        cellsPositions = getCavesPositionByWallWrapping(walls.get(randomInt));
       } else {
-        cellsPositions = getCellsPositionByWall(walls.get(randomInt));
+        cellsPositions = getCavesPositionByWall(walls.get(randomInt));
       }
       int cell1X = cellsPositions[0][0];
       int cell1Y = cellsPositions[0][1];
@@ -248,7 +248,7 @@ public class Game implements IDungeon {
       if (cellToUnion[cell1X][cell1Y] == cellToUnion[cell2X][cell2Y]) {
         savedWall.add(walls.get(randomInt));
       } else {
-        linkCells(cell1X, cell1Y, cell2X, cell2Y);
+        linkCaves(cell1X, cell1Y, cell2X, cell2Y);
         removedCount++;
         setUnionNum(
             unionToCells, cellToUnion, cellToUnion[cell1X][cell1Y], cellToUnion[cell2X][cell2Y]);
@@ -285,7 +285,7 @@ public class Game implements IDungeon {
    * @param cell2X The horizontal index of cell 2.
    * @param cell2Y The vertical index of cell 2.
    */
-  private void linkCells(int cell1X, int cell1Y, int cell2X, int cell2Y) {
+  private void linkCaves(int cell1X, int cell1Y, int cell2X, int cell2Y) {
     Room room1 = rooms[cell1X][cell1Y];
     Room room2 = rooms[cell2X][cell2Y];
     if (cell1X == cell2X) {
@@ -320,7 +320,7 @@ public class Game implements IDungeon {
    * @param wallIndex The wall index.
    * @return The location array of the two cells.
    */
-  private int[][] getCellsPositionByWall(int wallIndex) {
+  private int[][] getCavesPositionByWall(int wallIndex) {
     // The wall index is ordering by vertical first and then horizontal.
     if (wallIndex < rows * (cols - 1)) {
       int colIndex = wallIndex % (cols - 1);
@@ -340,7 +340,7 @@ public class Game implements IDungeon {
    * @param wallIndex The wall index.
    * @return The location array of the two cells.
    */
-  private int[][] getCellsPositionByWallWrapping(int wallIndex) {
+  private int[][] getCavesPositionByWallWrapping(int wallIndex) {
     if (wallIndex < rows * cols) {
       int colIndex = wallIndex % cols;
       int rowIndex = wallIndex / cols;
@@ -373,16 +373,16 @@ public class Game implements IDungeon {
       int[][] cellsPositions;
 
       if (isWrapping) {
-        cellsPositions = getCellsPositionByWallWrapping(savedWall.get(randomInt));
+        cellsPositions = getCavesPositionByWallWrapping(savedWall.get(randomInt));
       } else {
-        cellsPositions = getCellsPositionByWall(savedWall.get(randomInt));
+        cellsPositions = getCavesPositionByWall(savedWall.get(randomInt));
       }
 
       int cell1X = cellsPositions[0][0];
       int cell1Y = cellsPositions[0][1];
       int cell2X = cellsPositions[1][0];
       int cell2Y = cellsPositions[1][1];
-      linkCells(cell1X, cell1Y, cell2X, cell2Y);
+      linkCaves(cell1X, cell1Y, cell2X, cell2Y);
       savedWall.remove(randomInt);
     }
   }
@@ -807,11 +807,11 @@ public class Game implements IDungeon {
 
   @Override
   public void move(String direction) throws IllegalArgumentException {
-    walkedRooms.clear();
+    visitedRooms.clear();
     int playerPosX = currAdventurer.getAdventurerLocation()[0];
     int playerPosY = currAdventurer.getAdventurerLocation()[1];
     Room curr = rooms[playerPosX][playerPosY];
-    walkedRooms.add(curr);
+    visitedRooms.add(curr);
     int flag = 0;
     boolean getToWall = false;
 
@@ -883,7 +883,7 @@ public class Game implements IDungeon {
 
     while (!queue.isEmpty()) {
       Room curr = queue.poll();
-      curr.setReachToWumpus();
+      curr.setCouldReachWumpus();
       visited.add(curr);
       if (curr.getRoomAbove() != null
           && !visited.contains(curr.getRoomAbove())
@@ -914,7 +914,7 @@ public class Game implements IDungeon {
     for (int i = 0; i < rows; i++) {
       for (int j = 0; j < cols; j++) {
         if (rooms[i][j].getIsRoom()
-                && !rooms[i][j].getReachToWumpus()
+                && !rooms[i][j].getCouldReachWumpus()
                 && i == adventurer1.getAdventurerStartLocation()[0]
                 && j == adventurer1.getAdventurerStartLocation()[1]) {
           return true;
@@ -927,7 +927,7 @@ public class Game implements IDungeon {
 
   @Override
   public boolean checkShotSuccess() {
-    return isShootSuccess;
+    return isShotSuccess;
   }
 
   @Override
@@ -948,7 +948,7 @@ public class Game implements IDungeon {
 
   @Override
   public String getShotResult() {
-    if (isShootSuccess) {
+    if (isShotSuccess) {
       return "You shot to the wumpus!";
     }
     return "You missed the wumpus, and you have "
@@ -963,7 +963,7 @@ public class Game implements IDungeon {
    * @param flag The direction flag.
    */
   private void movementHelper(Room curr, int flag) {
-    walkedRooms.add(curr);
+    visitedRooms.add(curr);
     if (curr.getCloseToWumpus()) {
       alert = "You smell a Wumpus!  Nasty!";
       System.out.println(alert);
@@ -1026,7 +1026,7 @@ public class Game implements IDungeon {
     } else if (curr.getIsWumpus()) {
       isGameOver = true;
       alert = "Player " + getAdventurerRound() + "wins!";
-      isShootSuccess = true;
+      isShotSuccess = true;
       currAdventurer.setNumberOfArrows(currAdventurer.getNumberOfArrows() - 1);
       alert = "You hear a howl and thud. You killed the wumpus!";
       System.out.println(alert);
@@ -1145,7 +1145,7 @@ public class Game implements IDungeon {
       }
       playerPosX = currAdventurer.getAdventurerLocation()[0];
       playerPosY = currAdventurer.getAdventurerLocation()[1];
-      walkedRooms.add(rooms[playerPosX][playerPosY]);
+      visitedRooms.add(rooms[playerPosX][playerPosY]);
     }
     movementHelper(rooms[playerPosX][playerPosY], flag);
   }

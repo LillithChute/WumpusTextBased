@@ -7,12 +7,12 @@ import model.Game;
 
 public class Main {
   /**
-   * The main method is used to start either version of the maze game by input arguments.
+   * The main method is used to start the game by input arguments.
    *
    * @param args The input type of game version.
    */
   public static void main(String[] args) {
-    IDungeon game = createMaze();
+    IDungeon game = createGame();
 
     System.out.println(game.getAdventurerLocation());
 
@@ -24,9 +24,9 @@ public class Main {
   }
 
   /**
-   * Generate the maze by input the dimension of the maze, maze type, and player's start position.
+   * Generate the dungeon by input the dimensions, type, and adventurer's start position.
    */
-  public static IDungeon createMaze() {
+  public static IDungeon createGame() {
     Scanner scan = new Scanner(System.in);
     System.out.println("Input the number of rows: ");
     int rows = scan.nextInt();
