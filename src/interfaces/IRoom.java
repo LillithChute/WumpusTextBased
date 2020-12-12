@@ -2,6 +2,7 @@ package interfaces;
 
 import model.Room;
 
+/** The operations allowable on a cave.*/
 public interface IRoom {
   /**
    * Set the pointer to the next room.

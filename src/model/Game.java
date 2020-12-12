@@ -11,6 +11,7 @@ import java.util.Queue;
 import java.util.Random;
 import java.util.Set;
 
+/** The implementation for a dungeon.*/
 public class Game implements IDungeon {
   private List<Integer> savedWall;
   private int rows;

@@ -1,5 +1,6 @@
 package interfaces;
 
+/** The operations allowable for an adventurer.*/
 public interface IAdventurer {
   /**
    * Set the starting location for Adventurer.

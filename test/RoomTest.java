@@ -5,6 +5,7 @@ import model.Room;
 
 import static org.junit.Assert.assertEquals;
 
+/** Tests for the cave.*/
 public class RoomTest {
   private Room room1;
   private Room room2;

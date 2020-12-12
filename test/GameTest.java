@@ -9,6 +9,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
+/** Tests for the dungeon.*/
 public class GameTest {
   private IDungeon dungeonCrawlOne;
   private IDungeon dungeonCrawlTwo;
@@ -244,7 +245,8 @@ public class GameTest {
   public void testPlayerMoveToBat() {
     dungeonCrawlOne.setAdventurerStartLocation(0, 2);
     assertNotEquals(
-        dungeonCrawlOne.getAdventurerLocation(), "You are in cave (0, 2). " + "Tunnels lead to the W ");
+        dungeonCrawlOne.getAdventurerLocation(), "You are in cave (0, 2). "
+                    + "Tunnels lead to the W ");
   }
 
   @Test

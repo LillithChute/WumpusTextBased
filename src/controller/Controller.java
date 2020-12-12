@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.util.Objects;
 import java.util.Scanner;
 
+/** This will handle the data between the model and the console.*/
 public class Controller implements IController {
   private final Readable in;
   private final Appendable out;

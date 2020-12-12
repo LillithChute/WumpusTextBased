@@ -48,6 +48,7 @@ public class Adventurer implements interfaces.IAdventurer {
 
   @Override
   public void setIsAdventurerDead() {
+    // Working through something here.
   }
 
   @Override

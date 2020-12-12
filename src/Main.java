@@ -5,6 +5,7 @@ import java.io.InputStreamReader;
 import java.util.Scanner;
 import model.Game;
 
+/** The main class that kicks off the application.*/
 public class Main {
   /**
    * The main method is used to start the game by input arguments.

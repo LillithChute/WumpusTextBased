@@ -2,6 +2,7 @@ package interfaces;
 
 import java.io.IOException;
 
+/** The operations allowable for a controller.*/
 public interface IController {
   /**
    * Motivate the start of the maze game's game.controller.

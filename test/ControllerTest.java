@@ -9,6 +9,7 @@ import model.Game;
 
 import static org.junit.Assert.assertEquals;
 
+/** Tests for the controller.*/
 public class ControllerTest {
   private final Game game = new Game(3, 4, 6, true, false,
           0.2, 0.3, 3, 1);

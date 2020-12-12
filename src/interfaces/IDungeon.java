@@ -2,6 +2,7 @@ package interfaces;
 
 import model.Room;
 
+/** The operations allowable on a dungeon.*/
 public interface IDungeon {
   /**
    * Get the current location of the player.
